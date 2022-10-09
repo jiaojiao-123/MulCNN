@@ -1,3 +1,3 @@
 # MulCNN
-Due to github's limit on uploading file size, the trained model is over 500M, so I only uploaded the core code.
-If you need a trained model for your research, you can contact me by email.624189018@qq.com.
+MulCNN(Multiscale Convolutional Neural Networks) provides a deep learning method for cell type identification for scRNA-seq analysis. Using multi-scale convolution while filtering noise, the method extracts key features specific to individual cell types.
+The repository contains the source code for the paper MulCNN, a novel neural network framework for single-cell RNA-Seq analysis.
