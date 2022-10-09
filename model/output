@@ -1,0 +1,123 @@
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras import layers
+import warnings
+warnings.filterwarnings("ignore")
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import Dense, Dropout, Flatten
+import tensorflow.keras.backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import GlobalAveragePooling2D, GlobalMaxPooling2D, Reshape, Dense, multiply, Permute,Input, Concatenate, Conv2D, Add, Activation, Lambda
+from sklearn.decomposition import PCA
+from sklearn.externals import joblib
+from sklearn import metrics
+from sklearn.metrics import f1_score, precision_score, recall_score,accuracy_score
+from numpy.random import seed
+import random
+from tensorflow.keras.models import load_model
+
+label_num = 7
+sequence_length = 164
+epoch = 300 
+batch = 32
+my_seed = 26  
+np.random.seed(my_seed)
+random.seed(my_seed)
+tf.random.set_seed(my_seed)
+
+def testdata(data_name = test_name):
+    label_list = []
+    label_list_true = []
+    feature_list = []
+    feature_sequence = []
+    bridge = []
+    for num in range(len(data_name)):
+        expression = pd.read_csv(data_name[0], header=None)
+        label = []
+        label = expression[1]
+        label = np.array(label)
+        label = label[1:]
+        bridge = pd.read_csv(bridge_name[0],header=None)
+        bridge = np.array(bridge)
+        temp = []
+        for i in range(len(label)):
+            for j in range(bridge.shape[1]):
+                if label[i] == bridge[0][j]:
+                    temp.append(bridge[1][j])
+        label = np.array(temp)
+        label_list_true = label
+        label = to_categorical(label, num_classes= label_num+1)
+        label = np.delete(label, 0, axis=1)
+        for i in range(len(label)):
+            temp = []
+            for j in range(len(label[i])):
+                temp.append(int(label[i][j]))
+            label_list.append(temp)
+        label_list = np.array(label_list)
+        expression = np.array(expression)
+        expression = expression[1:,2:expression.shape[1]-1]
+        expression = np.array(expression)
+        for i in range(len(expression)):
+            temp = []
+            for j in range(len(expression[i])):
+                temp.append(float(expression[i][j]))
+            feature_list.append(temp)
+        feature_list = np.array(feature_list)
+        for i in range(feature_list.shape[0]):
+            for j in range(feature_list.shape[1]):
+                if feature_list[i][j] != 0:
+                    feature_list[i][j] = np.log2((feature_list[i][j]*1000000)/feature_list.shape[1])
+        for i in range(1, feature_list.shape[0] + 1):
+            temp = list(feature_list[i - 1])
+            temp = temp + [0] * ((sequence_length * sequence_length) - len(feature_list[i - 1]))
+            temp = np.array(temp)
+            temp = temp.reshape((sequence_length, sequence_length, 1))
+            feature_sequence.append(temp)
+        feature_sequence = np.array(feature_sequence)
+        return feature_sequence,label_list,label_list_true,feature_list
+test = testdata()
+
+pca = joblib.load(pca_model_name[0])
+test_pca = pca.transform(test[3])
+model = load_model(model_name[0])
+predict = model.predict([test[0],test_pca])
+
+
+predict_max = []
+for i in range(predict.shape[0]):
+    temp = []
+    temp = np.argmax(predict[i])
+    temp = temp +1
+    predict_max.append(temp)
+predict_max = np.array(predict_max)
+data_true = []
+temp_data = test[2]
+for i in range(len(temp_data)):
+    data_true.append(int(temp_data[i]))
+data_true = np.array(data_true)
+data_pred = predict_max
+
+f1 = f1_score( data_true, data_pred, average='macro' )   
+precision = precision_score(data_true, data_pred, average='macro') 
+recall = recall_score(data_true, data_pred, average='macro') 
+accuracy = accuracy_score(data_true, data_pred)
+ari = metrics.adjusted_rand_score(data_true,data_pred)
+
+with open(data_true_name[0], "w") as file_data_true:
+    print(data_true_name[0])
+    for i in range(len(data_true)):
+        file_data_true.write(str(data_true[i]))
+        file_data_true.write('\n')
+with open(data_pred_name[0], "w") as file_data_pred:
+    print(data_pred_name[0])
+    for i in range(len(data_pred)):
+        file_data_pred.write(str(data_pred[i]))
+        file_data_pred.write('\n')
+with open(data_predmatrix_name[0],"w") as file_data_predmatrix:
+    print(data_predmatrix_name[0])
+    for i in range(predict.shape[0]):
+        for j in range(predict.shape[1]):
+            file_data_predmatrix.write(str(predict[i][j]))
+            file_data_predmatrix.write(",")
+        file_data_predmatrix.write('\n')
