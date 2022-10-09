@@ -29,7 +29,7 @@ In preprocessing, parameters are used:
 - **geneSelectnum** selects a number of most variant genes. The default gene number is 2000
 - **code** preprocessing.py
 
-### 3. Run scGNN
+### 3. Run MulCNN
 
 We take an example of an analysis in GSE86469. Here we use parameters to demo purposes:
 
